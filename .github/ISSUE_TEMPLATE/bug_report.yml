@@ -1,0 +1,71 @@
+name: Bug Report 🐛
+description: Report a bug in Nodoo library
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please provide as much detail as possible to help us reproduce the issue.
+  - type: input
+    id: odoo-version
+    attributes:
+      label: Odoo Version
+      description: Which Odoo version(s) are you connecting to? (e.g. 14, 16.0, 18.2)
+      placeholder: e.g. 17.0
+    validations:
+      required: true
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Protocol
+      description: Which protocol were you using when the bug occurred?
+      options:
+        - JSON-RPC (default)
+        - XML-RPC
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Node.js version, Framework (Next.js, Vite, etc.), and OS.
+      placeholder: e.g. Node v20.10, Next.js 14, Linux
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal Reproducible Example
+      description: Please provide a code snippet that reproduces the issue. Use syntax highlighting.
+      placeholder: |
+        ```ts
+        const odoo = await OdooConnect.connect({ ... });
+        await odoo.orm.searchRead('res.partner', [['field', '=', 'value']]);
+        ```
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs / Stack Trace
+      description: Copy and paste any relevant error messages or stack traces here.
+      render: shell
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information or screenshots.
