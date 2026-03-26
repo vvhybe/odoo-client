@@ -1,16 +1,28 @@
-# codoo
+<!-- markdownlint-disable MD033 -->
+<h1>
+  <img src=".github/assets/logo.svg" alt="codoo logo" width="35" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">codoo</span>
+</h1>
+
+<p align="center">
+  <img src=".github/assets/banner.svg" alt="codoo banner" width="100%"/>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/codoo"><img src="https://img.shields.io/npm/v/codoo?color=1D9E75&labelColor=0D1117" alt="npm version"/></a>
+  <a href="https://github.com/vvhybe/codoo/actions/workflows/ci.yml"><img src="https://github.com/vvhybe/codoo/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+  <a href="https://codecov.io/gh/vvhybe/codoo"><img src="https://img.shields.io/codecov/c/github/vvhybe/codoo?color=7F77DD&labelColor=0D1117" alt="coverage"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow?labelColor=0D1117" alt="license"/></a>
+  <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?labelColor=0D1117" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/Odoo-14--19-714B67?labelColor=0D1117" alt="Odoo"/>
+</p>
 
 > Type-safe JSON-RPC and XML-RPC client for Odoo — works with Node.js, Next.js, React and any modern JS runtime.
 
-[![npm version](https://img.shields.io/npm/v/codoo)](https://www.npmjs.com/package/codoo)
-[![CI](https://github.com/vvhybe/codoo/actions/workflows/ci.yml/badge.svg)](https://github.com/vvhybe/codoo/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Contributing](https://img.shields.io/badge/Contributing-Standard-blue.svg)](CONTRIBUTING.md)
-[![Security](https://img.shields.io/badge/Security-Policy-red.svg)](SECURITY.md)
-
----
-
-## Features
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Features</span>
+</h2>
 
 - **Dual protocol** — JSON-RPC (`/web/dataset/call_kw`) and XML-RPC (`/xmlrpc/2/object`) in one package
 - **Full TypeScript** — typed domains, field values, ORM options, and error classes
@@ -20,16 +32,42 @@
 - **Zero dependencies** — uses native `fetch` (Node 18+, all browsers)
 - **Typed errors** — `OdooAuthenticationError`, `OdooAccessError`, `OdooValidationError`, etc.
 
----
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Architecture</span>
+</h2>
 
-## Requirements
+<p align="center">
+  <img src=".github/assets/architecture.svg" alt="codoo architecture diagram" width="860"/>
+</p>
+
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">How it works</span>
+</h3>
+
+`OdooConnect` is the single entry point. It wires together three layers:
+
+**Services** sit in the middle and own all business logic — `AuthService` handles the three auth paths (session, XML-RPC password, API key), `OrmService` translates your method calls into the correct RPC payloads and handles version-specific API differences between Odoo 14 and 19.
+
+**Clients** at the bottom do exactly one thing: fire an HTTP request and deserialise the response. `JsonRpcClient` owns the session cookie across calls in Node.js environments. `XmlRpcClient` includes a zero-dependency XML serialiser/deserialiser.
+
+**Shared infra** (retry, typed errors) is used by both clients. Auth errors are never retried — they surface immediately. Network errors back off exponentially.
+
+The protocol is hot-swappable — set `protocol: 'xmlrpc'` and the same ORM API routes through XML-RPC. The service layer never knows the difference.
+
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Requirements</span>
+</h2>
 
 - Node.js ≥ 18 (for native `fetch` and `DOMParser`)
 - Odoo 14, 15, 16, 17, 18, 19
 
----
-
-## Installation
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Installation</span>
+</h2>
 
 ```bash
 npm install codoo
@@ -39,9 +77,10 @@ pnpm add codoo
 yarn add codoo
 ```
 
----
-
-## Quick start
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Quick start</span>
+</h2>
 
 ```ts
 import { OdooConnect } from 'codoo';
@@ -70,9 +109,10 @@ await odoo.orm.write('res.partner', [id], { phone: '+1 555 0100' });
 await odoo.orm.unlink('res.partner', [id]);
 ```
 
----
-
-## Configuration
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Configuration</span>
+</h2>
 
 ```ts
 interface OdooConfig {
@@ -89,11 +129,15 @@ interface OdooConfig {
 }
 ```
 
----
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">API reference</span>
+</h2>
 
-## API reference
-
-### `OdooConnect`
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;"><code>OdooConnect</code></span>
+</h3>
 
 | Method | Description |
 | --- | --- |
@@ -107,11 +151,15 @@ interface OdooConfig {
 | `odoo.jsonRpc` | `JsonRpcClient` — direct RPC access |
 | `odoo.xmlRpc` | `XmlRpcClient` — direct RPC access |
 
----
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;"><code>OrmService</code> (<code>odoo.orm</code>)</span>
+</h3>
 
-### `OrmService` (`odoo.orm`)
-
-#### Read
+<h4>
+  <img src=".github/assets/logo.svg" alt="logo" width="18" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Read</span>
+</h4>
 
 ```ts
 // Search + read in one call
@@ -136,7 +184,10 @@ orm.nameSearch(model, name, domain?, limit?, context?): Promise<[number, string]
 orm.paginate<T>(model, domain?, options?): AsyncGenerator<T[]>
 ```
 
-#### Write
+<h4>
+  <img src=".github/assets/logo.svg" alt="logo" width="18" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Write</span>
+</h4>
 
 ```ts
 // Create one record — returns new id
@@ -152,7 +203,10 @@ orm.write(model, ids, values, context?): Promise<boolean>
 orm.unlink(model, ids, context?): Promise<boolean>
 ```
 
-#### Metadata / advanced
+<h4>
+  <img src=".github/assets/logo.svg" alt="logo" width="18" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Metadata / advanced</span>
+</h4>
 
 ```ts
 // Get field definitions
@@ -162,9 +216,10 @@ orm.fieldsGet(model, attributes?, context?): Promise<OdooFieldsGet>
 orm.callMethod<T>(model, method, args?, kwargs?, context?): Promise<T>
 ```
 
----
-
-### Domain syntax
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Domain syntax</span>
+</h3>
 
 Domains follow Odoo's standard domain format:
 
@@ -186,9 +241,10 @@ const complex: OdooDomain = [
 
 Supported leaf operators: `=`, `!=`, `>`, `>=`, `<`, `<=`, `like`, `ilike`, `not like`, `not ilike`, `in`, `not in`, `child_of`, `parent_of`, `=like`, `=ilike`.
 
----
-
-### Typed records
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Typed records</span>
+</h3>
 
 ```ts
 import type { TypedOdooRecord } from 'codoo';
@@ -211,9 +267,10 @@ const partners = await odoo.orm.searchRead<TypedOdooRecord<ResPartner>>(
 // partners[0].id is number ✓
 ```
 
----
-
-### Pagination
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Pagination</span>
+</h3>
 
 ```ts
 // Process all active products in pages of 200
@@ -226,9 +283,10 @@ for await (const page of odoo.orm.paginate('product.product', [['active', '=', t
 }
 ```
 
----
-
-### Using API keys (Odoo 14+)
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Using API keys (Odoo 14+)</span>
+</h3>
 
 ```ts
 const odoo = await OdooConnect.connect({
@@ -241,9 +299,10 @@ const odoo = await OdooConnect.connect({
 
 Generate API keys in Odoo under **Settings → Users → your user → API Keys**.
 
----
-
-### XML-RPC protocol
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">XML-RPC protocol</span>
+</h3>
 
 ```ts
 const odoo = await OdooConnect.connect({
@@ -257,9 +316,10 @@ const odoo = await OdooConnect.connect({
 const ids = await odoo.orm.search('sale.order', [['state', '=', 'sale']]);
 ```
 
----
-
-### Error handling
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Error handling</span>
+</h3>
 
 ```ts
 import {
@@ -287,9 +347,10 @@ try {
 }
 ```
 
----
-
-### Next.js App Router
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Next.js App Router</span>
+</h3>
 
 ```ts
 // lib/odoo.ts (server-only)
@@ -324,9 +385,10 @@ export async function GET() {
 }
 ```
 
----
-
-### Custom controller calls
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Custom controller calls</span>
+</h3>
 
 ```ts
 // JSON-RPC — call a custom Odoo controller
@@ -343,9 +405,10 @@ const result = await odoo.xmlRpc.executeKw(
 );
 ```
 
----
-
-### ORM commands (One2many / Many2many)
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">ORM commands (One2many / Many2many)</span>
+</h3>
 
 ```ts
 import type { OdooCommand } from 'codoo';
@@ -359,9 +422,10 @@ await odoo.orm.write('sale.order', [orderId], {
 });
 ```
 
----
-
-## Environment variables
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Environment variables</span>
+</h2>
 
 ```bash
 ODOO_URL=https://mycompany.odoo.com
@@ -372,15 +436,14 @@ ODOO_PASSWORD=secret
 ODOO_API_KEY=your-api-key
 ```
 
----
-
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to get started.
 
 Please follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
 
----
-
-## Community Standards
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Community Standards</span>
+</h2>
 
 To ensure a healthy and welcoming community, we adhere to the following standards:
 
@@ -388,9 +451,10 @@ To ensure a healthy and welcoming community, we adhere to the following standard
 - [Security Policy](SECURITY.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
 
----
-
-## Roadmap
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Roadmap</span>
+</h2>
 
 - [ ] `ReportService` — render and download PDF/XLSX reports
 - [ ] `WebsocketService` — Odoo bus real-time subscriptions
@@ -398,8 +462,9 @@ To ensure a healthy and welcoming community, we adhere to the following standard
 - [ ] React hooks package (`codoo-react`)
 - [ ] Model type generator from `fields_get` output
 
----
-
-## License
+<h2>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">License</span>
+</h2>
 
 MIT © [whybe](LICENSE)
