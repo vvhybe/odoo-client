@@ -127,7 +127,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: codoo ${{ github.ref_name }}
+          name: odoox ${{ github.ref_name }}
           body: |
             ## What's changed
 
@@ -137,9 +137,9 @@ jobs:
 
             **Install**
             ```bash
-            npm install codoo@${{ needs.verify.outputs.version }}
+            npm install odoox@${{ needs.verify.outputs.version }}
             ```
 
-            **Full changelog**: https://github.com/vvhybe/codoo/blob/main/CHANGELOG.md
+            **Full changelog**: https://github.com/vvhybe/odoox/blob/main/CHANGELOG.md
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}

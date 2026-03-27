@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: GitHub Discusssions
-    url: https://github.com/vvhybe/codoo/discussions
+    url: https://github.com/vvhybe/odoox/discussions
     about: Please ask questions and help each other here!
   - name: Code of Conduct
-    url: https://github.com/vvhybe/codoo/blob/main/CODE_OF_CONDUCT.md
+    url: https://github.com/vvhybe/odoox/blob/main/CODE_OF_CONDUCT.md
     about: Please read our code of conduct before participating.

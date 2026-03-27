@@ -1,17 +1,17 @@
 <!-- markdownlint-disable MD033 -->
 <h1>
-  <img src=".github/assets/logo.svg" alt="codoo logo" width="35" style="vertical-align: middle;"/>
-  <span style="vertical-align: middle;">codoo</span>
+  <img src=".github/assets/logo.svg" alt="odoox logo" width="35" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">odoox</span>
 </h1>
 
 <p align="center">
-  <img src=".github/assets/banner.svg" alt="codoo banner" width="100%"/>
+  <img src=".github/assets/banner.svg" alt="odoox banner" width="100%"/>
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/codoo"><img src="https://img.shields.io/npm/v/codoo?color=1D9E75&labelColor=0D1117" alt="npm version"/></a>
-  <a href="https://github.com/vvhybe/codoo/actions/workflows/ci.yml"><img src="https://github.com/vvhybe/codoo/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
-  <a href="https://codecov.io/gh/vvhybe/codoo"><img src="https://img.shields.io/codecov/c/github/vvhybe/codoo?color=7F77DD&labelColor=0D1117" alt="coverage"/></a>
+  <a href="https://www.npmjs.com/package/odoox"><img src="https://img.shields.io/npm/v/odoox?color=1D9E75&labelColor=0D1117" alt="npm version"/></a>
+  <a href="https://github.com/vvhybe/odoox/actions/workflows/ci.yml"><img src="https://github.com/vvhybe/odoox/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+  <a href="https://codecov.io/gh/vvhybe/odoox"><img src="https://img.shields.io/codecov/c/github/vvhybe/odoox?color=7F77DD&labelColor=0D1117" alt="coverage"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow?labelColor=0D1117" alt="license"/></a>
   <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?labelColor=0D1117" alt="Node.js"/>
   <img src="https://img.shields.io/badge/Odoo-14--19-714B67?labelColor=0D1117" alt="Odoo"/>
@@ -38,7 +38,7 @@
 </h2>
 
 <p align="center">
-  <img src=".github/assets/architecture.svg" alt="codoo architecture diagram" width="860"/>
+  <img src=".github/assets/architecture.svg" alt="odoox architecture diagram" width="860"/>
 </p>
 
 <h3>
@@ -70,11 +70,11 @@ The protocol is hot-swappable — set `protocol: 'xmlrpc'` and the same ORM API 
 </h2>
 
 ```bash
-npm install codoo
+npm install odoox
 # or
-pnpm add codoo
+pnpm add odoox
 # or
-yarn add codoo
+yarn add odoox
 ```
 
 <h2>
@@ -83,7 +83,7 @@ yarn add codoo
 </h2>
 
 ```ts
-import { OdooConnect } from 'codoo';
+import { OdooConnect } from 'odoox';
 
 // Option A: factory method (authenticates immediately)
 const odoo = await OdooConnect.connect({
@@ -224,7 +224,7 @@ orm.callMethod<T>(model, method, args?, kwargs?, context?): Promise<T>
 Domains follow Odoo's standard domain format:
 
 ```ts
-import type { OdooDomain } from 'codoo';
+import type { OdooDomain } from 'odoox';
 
 const domain: OdooDomain = [
   ['is_company', '=', true],
@@ -247,7 +247,7 @@ Supported leaf operators: `=`, `!=`, `>`, `>=`, `<`, `<=`, `like`, `ilike`, `not
 </h3>
 
 ```ts
-import type { TypedOdooRecord } from 'codoo';
+import type { TypedOdooRecord } from 'odoox';
 
 interface ResPartner {
   name: string;
@@ -330,7 +330,7 @@ import {
   OdooNetworkError,
   OdooTimeoutError,
   OdooRpcError,
-} from 'codoo';
+} from 'odoox';
 
 try {
   await odoo.orm.create('res.partner', { name: '' });
@@ -354,7 +354,7 @@ try {
 
 ```ts
 // lib/odoo.ts (server-only)
-import { OdooConnect } from 'codoo';
+import { OdooConnect } from 'odoox';
 
 let _client: OdooConnect | null = null;
 
@@ -411,7 +411,7 @@ const result = await odoo.xmlRpc.executeKw(
 </h3>
 
 ```ts
-import type { OdooCommand } from 'codoo';
+import type { OdooCommand } from 'odoox';
 
 await odoo.orm.write('sale.order', [orderId], {
   order_line: [
@@ -459,7 +459,7 @@ To ensure a healthy and welcoming community, we adhere to the following standard
 - [ ] `ReportService` — render and download PDF/XLSX reports
 - [ ] `WebsocketService` — Odoo bus real-time subscriptions
 - [ ] Batch request support (single HTTP round-trip for multiple calls)
-- [ ] React hooks package (`codoo-react`)
+- [ ] React hooks package (`odoox-react`)
 - [ ] Model type generator from `fields_get` output
 
 <h2>
