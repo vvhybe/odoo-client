@@ -11,6 +11,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@vvhybe/odoo-client"><img src="https://img.shields.io/npm/v/@vvhybe/odoo-client?color=1D9E75&labelColor=0D1117" alt="npm version"/></a>
   <a href="https://github.com/vvhybe/odoo-client/actions/workflows/ci.yml"><img src="https://github.com/vvhybe/odoo-client/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+  <a href="https://doi.org/10.5281/zenodo.23422737"><img src="https://zenodo.org/badge/1191739572.svg" alt="DOI"></a>
   <a href="https://codecov.io/gh/vvhybe/odoo-client"><img src="https://img.shields.io/codecov/c/github/vvhybe/odoo-client?color=7F77DD&labelColor=0D1117" alt="coverage"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow?labelColor=0D1117" alt="license"/></a>
   <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?labelColor=0D1117" alt="Node.js"/>
