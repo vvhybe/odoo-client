@@ -247,12 +247,12 @@ export class OrmService {
     attributes?: string[],
     context?: OdooContext,
   ): Promise<OdooFieldsGet> {
-    return this.callKw<OdooFieldsGet>(
-      model,
-      "fields_get",
-      attributes ? [attributes] : [[]],
-      { context: this.mergeContext(context) },
-    );
+    // fields_get(allfields=None, attributes=None): the attributes go by
+    // keyword; a positional list would be read as the field names to return.
+    return this.callKw<OdooFieldsGet>(model, "fields_get", [], {
+      ...(attributes ? { attributes } : {}),
+      context: this.mergeContext(context),
+    });
   }
 
   /**
