@@ -270,6 +270,40 @@ const partners = await odoo.orm.searchRead<TypedOdooRecord<ResPartner>>(
 
 <h3>
   <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
+  <span style="vertical-align: middle;">Model types</span>
+</h3>
+
+Instead of writing model interfaces by hand, generate them from the server's own field definitions (`fields_get`):
+
+```bash
+ODOO_URL=https://mycompany.odoo.com ODOO_DB=mydb ODOO_USERNAME=admin@example.com ODOO_PASSWORD=secret \
+  npx @vvhybe/odoo-client typegen res.partner sale.order --out src/odoo-types.ts
+```
+
+- Credentials come only from `ODOO_URL`, `ODOO_DB`, `ODOO_USERNAME`, and `ODOO_PASSWORD` or `ODOO_API_KEY`. With an API key, the command uses XML-RPC. Set `ODOO_VERSION` (14–19) for servers older than 19.
+- Without `--out`, the file is printed. `--out` creates missing folders.
+- Each model becomes one interface named in PascalCase (`sale.order` → `SaleOrder`), typed the way `searchRead` returns values: many2one `[number, string] | false`, x2many `number[]`, selection a union of its keys, text and date fields `string | false`. Each field keeps its label as a doc comment.
+- The output has no timestamp or server details, so regenerating gives clean diffs.
+- Exit codes: `0` success, `1` usage or environment error, `2` Odoo error.
+
+Every field is declared. For a `searchRead` that asks for some fields only, pick them:
+
+```ts
+import type { TypedOdooRecord } from '@vvhybe/odoo-client';
+import type { ResPartner } from './odoo-types';
+
+type PartnerRow = TypedOdooRecord<Pick<ResPartner, 'name' | 'email' | 'company_type'>>;
+
+const partners = await odoo.orm.searchRead<PartnerRow>('res.partner', [], {
+  fields: ['name', 'email', 'company_type'],
+});
+// partners[0].company_type is "person" | "company" | false ✓
+```
+
+The same generator is available as functions: `generateModelTypes(model, fieldsGet)` and `generateTypesFile([{ model, fields }])`.
+
+<h3>
+  <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
   <span style="vertical-align: middle;">Pagination</span>
 </h3>
 
@@ -476,7 +510,7 @@ To ensure a healthy and welcoming community, we adhere to the following standard
 - [ ] `WebsocketService` — Odoo bus real-time subscriptions
 - [ ] Batch request support (single HTTP round-trip for multiple calls)
 - [ ] React hooks package (`@vvhybe/odoo-client-react`)
-- [ ] Model type generator from `fields_get` output
+- [x] Model type generator from `fields_get` output
 
 <h2>
   <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
