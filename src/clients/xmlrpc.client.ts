@@ -1,5 +1,10 @@
 import { OdooNetworkError } from "../errors/odoo.errors.js";
-import { safeFetch, withRetry, type RetryOptions } from "../utils/retry.js";
+import {
+  isReadMethod,
+  safeFetch,
+  withRetry,
+  type RetryOptions,
+} from "../utils/retry.js";
 import {
   serialiseXmlRpc,
   deserialiseXmlRpc,
@@ -19,14 +24,21 @@ export class XmlRpcClient {
 
   // ─── Core call ────────────────────────────────────────────────────────────
 
+  /**
+   * Posts an XML-RPC call.
+   * @param options.retry retry on network failures and timeouts. Off by
+   *   default: only pass `true` for calls that do not change data.
+   */
   async call<T extends XmlRpcValue = XmlRpcValue>(
     endpoint: "/xmlrpc/2/common" | "/xmlrpc/2/object" | string,
     method: string,
     params: XmlRpcValue[],
+    options: { retry?: boolean } = {},
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const body = serialiseXmlRpc(method, params);
 
+    const retryOptions = this.retryOptionsFor(options.retry ?? false);
     return withRetry(async () => {
       const response = await safeFetch(
         url,
@@ -49,16 +61,20 @@ export class XmlRpcClient {
 
       const xml = await response.text();
       return (await deserialiseXmlRpc(xml)) as T;
-    }, this.retryOptions);
+    }, retryOptions);
+  }
+
+  private retryOptionsFor(retry: boolean): RetryOptions {
+    return retry ? this.retryOptions : { ...this.retryOptions, retries: 0 };
   }
 
   // ─── /xmlrpc/2/common ────────────────────────────────────────────────────
 
   /** Returns server version info */
   async version(): Promise<Record<string, unknown>> {
-    return this.call("/xmlrpc/2/common", "version", []) as Promise<
-      Record<string, unknown>
-    >;
+    return this.call("/xmlrpc/2/common", "version", [], {
+      retry: true,
+    }) as Promise<Record<string, unknown>>;
   }
 
   /**
@@ -75,6 +91,7 @@ export class XmlRpcClient {
       "/xmlrpc/2/common",
       "authenticate",
       [db, username, password, userAgent as XmlRpcValue],
+      { retry: true },
     );
     return result;
   }
@@ -94,14 +111,11 @@ export class XmlRpcClient {
     args: XmlRpcValue[],
     kwargs: Record<string, XmlRpcValue> = {},
   ): Promise<T> {
-    return this.call<T>("/xmlrpc/2/object", "execute_kw", [
-      db,
-      uid,
-      password,
-      model,
-      method,
-      args,
-      kwargs,
-    ]);
+    return this.call<T>(
+      "/xmlrpc/2/object",
+      "execute_kw",
+      [db, uid, password, model, method, args, kwargs],
+      { retry: isReadMethod(method) },
+    );
   }
 }

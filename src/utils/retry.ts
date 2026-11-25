@@ -1,8 +1,4 @@
-import {
-  OdooAuthenticationError,
-  OdooNetworkError,
-  OdooTimeoutError,
-} from "../errors/odoo.errors.js";
+import { OdooNetworkError, OdooTimeoutError } from "../errors/odoo.errors.js";
 
 export interface RetryOptions {
   retries: number;
@@ -11,11 +7,44 @@ export interface RetryOptions {
   onRetry?: (attempt: number, error: Error) => void;
 }
 
-const NON_RETRYABLE = [OdooAuthenticationError];
+/**
+ * ORM methods that only read. Only these are retried: a call that may change
+ * data is sent once, because after a lost response Odoo may already have
+ * applied it, and sending it again would apply it twice.
+ */
+const READ_METHODS = new Set([
+  "search_read",
+  "search",
+  "search_count",
+  "read",
+  "read_group",
+  "formatted_read_group",
+  "name_search",
+  "name_get",
+  "fields_get",
+  "default_get",
+  "web_search_read",
+  "web_read",
+  "web_read_group",
+]);
+
+/** Whether `method` only reads, so a call to it is safe to send again. */
+export function isReadMethod(method: string): boolean {
+  return READ_METHODS.has(method);
+}
 
 /**
- * Runs `fn` with exponential backoff retries.
- * Auth errors are never retried — they require user action.
+ * Whether `error` is a transport failure (the request may not have reached
+ * Odoo). An error Odoo returned is its answer: sending again gives the same.
+ */
+function isTransportFailure(error: Error): boolean {
+  return error instanceof OdooNetworkError || error instanceof OdooTimeoutError;
+}
+
+/**
+ * Runs `fn` with exponential backoff retries on transport failures only.
+ * Errors returned by Odoo (access, validation, authentication…) are thrown
+ * at once. Callers pass `retries: 0` for calls that may change data.
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
@@ -29,8 +58,7 @@ export async function withRetry<T>(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
-      // Never retry auth or validation errors
-      if (NON_RETRYABLE.some((Cls) => lastError instanceof Cls)) {
+      if (!isTransportFailure(lastError)) {
         throw lastError;
       }
 

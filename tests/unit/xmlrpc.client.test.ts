@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { XmlRpcClient } from "../../src/clients/xmlrpc.client.js";
+import {
+  OdooNetworkError,
+  OdooValidationError,
+} from "../../src/errors/odoo.errors.js";
 import { safeFetch } from "../../src/utils/retry.js";
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -127,6 +131,42 @@ describe("XmlRpcClient", () => {
         }),
         5000,
       );
+    });
+  });
+
+  describe("retries", () => {
+    const retrying = () =>
+      new XmlRpcClient(baseUrl, 5000, { retries: 2, retryDelay: 1 });
+
+    it("retries a read method after a network failure", async () => {
+      vi.mocked(safeFetch).mockRejectedValue(new OdooNetworkError("down"));
+      await expect(
+        retrying().executeKw("db", 1, "pw", "res.partner", "search_read", [[]]),
+      ).rejects.toBeInstanceOf(OdooNetworkError);
+      expect(safeFetch).toHaveBeenCalledTimes(3);
+    });
+
+    it("sends a write only once after a network failure", async () => {
+      vi.mocked(safeFetch).mockRejectedValue(new OdooNetworkError("down"));
+      await expect(
+        retrying().executeKw("db", 1, "pw", "res.partner", "write", [[1], {}]),
+      ).rejects.toBeInstanceOf(OdooNetworkError);
+      expect(safeFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("throws a UserError fault at once as OdooValidationError", async () => {
+      const fault = `<?xml version="1.0"?><methodResponse><fault><value><struct>
+        <member><name>faultCode</name><value><int>2</int></value></member>
+        <member><name>faultString</name><value><string>Refused</string></value></member>
+        </struct></value></fault></methodResponse>`;
+      vi.mocked(safeFetch).mockResolvedValue({
+        ok: true,
+        text: vi.fn().mockResolvedValue(fault),
+      } as unknown as Response);
+      await expect(
+        retrying().executeKw("db", 1, "pw", "res.partner", "search_read", [[]]),
+      ).rejects.toBeInstanceOf(OdooValidationError);
+      expect(safeFetch).toHaveBeenCalledTimes(1);
     });
   });
 });

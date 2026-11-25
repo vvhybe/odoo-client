@@ -28,7 +28,7 @@
 - **Dual protocol** — JSON-RPC (`/web/dataset/call_kw`) and XML-RPC (`/xmlrpc/2/object`) in one package
 - **Full TypeScript** — typed domains, field values, ORM options, and error classes
 - **Auth strategies** — session/password auth or API key (Odoo 14+)
-- **Retry & timeout** — exponential backoff on network failures; auth errors are never retried
+- **Retry & timeout** — reads are retried with exponential backoff on network failures and timeouts; errors returned by Odoo and calls that change data are never retried
 - **Async pagination** — `orm.paginate()` async generator for bulk record processing
 - **Zero dependencies** — uses native `fetch` (Node 18+, all browsers)
 - **Typed errors** — `OdooAuthenticationError`, `OdooAccessError`, `OdooValidationError`, etc.
@@ -53,7 +53,7 @@
 
 **Clients** at the bottom do exactly one thing: fire an HTTP request and deserialise the response. `JsonRpcClient` owns the session cookie across calls in Node.js environments. `XmlRpcClient` includes a zero-dependency XML serialiser/deserialiser.
 
-**Shared infra** (retry, typed errors) is used by both clients. Auth errors are never retried — they surface immediately. Network errors back off exponentially.
+**Shared infra** (retry, typed errors) is used by both clients. Errors returned by Odoo are never retried — they surface immediately. Network failures and timeouts back off exponentially, for reads only: a call that may change data is sent once, so a lost response never applies it twice.
 
 The protocol is hot-swappable — set `protocol: 'xmlrpc'` and the same ORM API routes through XML-RPC. The service layer never knows the difference.
 
@@ -124,7 +124,7 @@ interface OdooConfig {
   apiKey?: string;       // Alternative to password (Odoo 14+)
   protocol?: 'jsonrpc' | 'xmlrpc';  // Default: 'jsonrpc'
   timeout?: number;      // ms. Default: 30000
-  retries?: number;      // Default: 3
+  retries?: number;      // Retries of a read after a network failure or timeout. Default: 3
   retryDelay?: number;   // Base backoff ms. Default: 500
   context?: OdooContext; // Merged into every RPC call
 }
@@ -347,6 +347,21 @@ try {
   }
 }
 ```
+
+Odoo's exceptions map to these classes. JSON-RPC uses the exception class in `error.data.name`, and XML-RPC uses the fault code:
+
+| Odoo raises | JSON-RPC `data.name` | XML-RPC `faultCode` | Thrown as |
+| --- | --- | --- | --- |
+| Wrong login or API key | `odoo.exceptions.AccessDenied` | 3 | `OdooAuthenticationError` |
+| Expired session | `odoo.http.SessionExpiredException` (code 100) | — | `OdooSessionExpiredError`, a subclass of `OdooAuthenticationError` |
+| No access right | `odoo.exceptions.AccessError` | 4 | `OdooAccessError` |
+| Business rule or constraint | `odoo.exceptions.UserError`, `ValidationError` | 2 | `OdooValidationError` |
+| Deleted record | `odoo.exceptions.MissingError` | — | `OdooNotFoundError` |
+| Anything else | any other | 1 | `OdooRpcError` (`exceptionType`, `debug`) |
+
+None of these is retried: Odoo already answered, and sending the call again gives the same answer.
+
+**Retries.** Only network failures and timeouts are retried, and only for calls that read: `search_read`, `read`, `search`, `search_count`, `name_search`, `fields_get`, the `web_*` readers, `read_group` and authentication. `create`, `write`, `unlink`, custom methods (`callMethod`) and custom paths (`callPath`) are sent once. If the response to one of them is lost, Odoo may already have applied it, so read the data again before you retry.
 
 <h3>
   <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
