@@ -1,0 +1,117 @@
+{
+  "active": {
+    "string": "Active",
+    "type": "boolean"
+  },
+  "activity_date_deadline": {
+    "string": "Next Activity Deadline",
+    "type": "date"
+  },
+  "available_peppol_eas": {
+    "string": "Available Peppol Eas",
+    "type": "json"
+  },
+  "available_peppol_edi_formats": {
+    "string": "Available Peppol Edi Formats",
+    "type": "json"
+  },
+  "category_id": {
+    "relation": "res.partner.category",
+    "string": "Tags",
+    "type": "many2many"
+  },
+  "child_ids": {
+    "relation": "res.partner",
+    "string": "Contact",
+    "type": "one2many"
+  },
+  "color": {
+    "string": "Color Index",
+    "type": "integer"
+  },
+  "comment": {
+    "string": "Notes",
+    "type": "html"
+  },
+  "company_type": {
+    "selection": [
+      [
+        "person",
+        "Individual"
+      ],
+      [
+        "company",
+        "Company"
+      ]
+    ],
+    "string": "Company Type",
+    "type": "selection"
+  },
+  "debit_limit": {
+    "string": "Payable Limit",
+    "type": "monetary"
+  },
+  "display_name": {
+    "string": "Display Name",
+    "type": "char"
+  },
+  "email": {
+    "string": "Email",
+    "type": "char"
+  },
+  "id": {
+    "string": "ID",
+    "type": "integer"
+  },
+  "image_128": {
+    "string": "Image 128",
+    "type": "binary"
+  },
+  "invoice_warn_msg": {
+    "string": "Message for Invoice",
+    "type": "text"
+  },
+  "is_company": {
+    "string": "Is a Company",
+    "type": "boolean"
+  },
+  "name": {
+    "string": "Name",
+    "type": "char"
+  },
+  "parent_id": {
+    "relation": "res.partner",
+    "string": "Related Company",
+    "type": "many2one"
+  },
+  "partner_latitude": {
+    "string": "Geo Latitude",
+    "type": "float"
+  },
+  "type": {
+    "selection": [
+      [
+        "contact",
+        "Contact"
+      ],
+      [
+        "invoice",
+        "Invoice Address"
+      ],
+      [
+        "delivery",
+        "Delivery Address"
+      ],
+      [
+        "other",
+        "Other Address"
+      ]
+    ],
+    "string": "Address Type",
+    "type": "selection"
+  },
+  "write_date": {
+    "string": "Last Updated on",
+    "type": "datetime"
+  }
+}

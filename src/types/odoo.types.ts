@@ -162,7 +162,11 @@ export type OdooFieldType =
   | "many2many"
   | "one2many"
   | "binary"
-  | "reference";
+  | "reference"
+  | "many2one_reference"
+  | "json"
+  | "properties"
+  | "properties_definition";
 
 export interface OdooFieldDef {
   type: OdooFieldType;

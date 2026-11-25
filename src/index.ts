@@ -152,3 +152,9 @@ export { OrmService } from "./services/orm.service.js";
 export { AuthService } from "./services/auth.service.js";
 export { JsonRpcClient } from "./clients/jsonrpc.client.js";
 export { XmlRpcClient } from "./clients/xmlrpc.client.js";
+export {
+  generateModelTypes,
+  generateTypesFile,
+  modelInterfaceName,
+  TYPEGEN_HEADER,
+} from "./typegen/generate.js";

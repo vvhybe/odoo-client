@@ -304,4 +304,34 @@ describe("OrmService", () => {
       expect(mockJsonRpc.callKw).toHaveBeenCalledTimes(3);
     });
   });
+
+  describe("fieldsGet", () => {
+    it("sends attributes as the attributes keyword, not as field names", async () => {
+      (mockJsonRpc.callKw as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+      await orm.fieldsGet("res.partner", ["type", "string"]);
+
+      // fields_get(allfields=None, attributes=None): a positional list would
+      // be read as allfields and limit the answer to fields of those names.
+      expect(mockJsonRpc.callKw).toHaveBeenCalledWith(
+        "res.partner",
+        "fields_get",
+        [],
+        { attributes: ["type", "string"], context: {} },
+      );
+    });
+
+    it("asks for every attribute when none are given", async () => {
+      (mockJsonRpc.callKw as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+      await orm.fieldsGet("res.partner");
+
+      expect(mockJsonRpc.callKw).toHaveBeenCalledWith(
+        "res.partner",
+        "fields_get",
+        [],
+        { context: {} },
+      );
+    });
+  });
 });

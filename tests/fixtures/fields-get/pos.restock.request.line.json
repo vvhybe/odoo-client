@@ -1,0 +1,142 @@
+{
+  "company_id": {
+    "relation": "res.company",
+    "string": "Company",
+    "type": "many2one"
+  },
+  "create_date": {
+    "string": "Created on",
+    "type": "datetime"
+  },
+  "create_uid": {
+    "relation": "res.users",
+    "string": "Created by",
+    "type": "many2one"
+  },
+  "display_name": {
+    "string": "Display Name",
+    "type": "char"
+  },
+  "hold": {
+    "string": "Hold",
+    "type": "boolean"
+  },
+  "hold_review_date": {
+    "string": "Hold Review Date",
+    "type": "date"
+  },
+  "id": {
+    "string": "ID",
+    "type": "integer"
+  },
+  "location_id": {
+    "relation": "stock.location",
+    "string": "Source Location",
+    "type": "many2one"
+  },
+  "log_ids": {
+    "relation": "pos.restock.request.log",
+    "string": "Changes",
+    "type": "one2many"
+  },
+  "move_ids": {
+    "relation": "stock.move",
+    "string": "Moves",
+    "type": "one2many"
+  },
+  "pos_config_id": {
+    "relation": "pos.config",
+    "string": "Point of Sale",
+    "type": "many2one"
+  },
+  "product_id": {
+    "relation": "product.product",
+    "string": "Product",
+    "type": "many2one"
+  },
+  "product_name": {
+    "string": "Product Name",
+    "type": "char"
+  },
+  "product_uom_id": {
+    "relation": "uom.uom",
+    "string": "Unit",
+    "type": "many2one"
+  },
+  "qty_added": {
+    "string": "Qty Added",
+    "type": "float"
+  },
+  "qty_added_open": {
+    "string": "Added, not shipped",
+    "type": "float"
+  },
+  "qty_allocated": {
+    "string": "Qty Allocated",
+    "type": "float"
+  },
+  "qty_declined": {
+    "string": "Qty Declined",
+    "type": "float"
+  },
+  "qty_requested": {
+    "string": "Qty Requested",
+    "type": "float"
+  },
+  "qty_shipped": {
+    "string": "Qty Shipped",
+    "type": "float"
+  },
+  "qty_waiting": {
+    "string": "Qty Waiting",
+    "type": "float"
+  },
+  "request_date": {
+    "string": "Request Date",
+    "type": "datetime"
+  },
+  "request_id": {
+    "relation": "pos.restock.request",
+    "string": "Request",
+    "type": "many2one"
+  },
+  "shipment_names": {
+    "string": "Shipment Names",
+    "type": "char"
+  },
+  "state": {
+    "selection": [
+      [
+        "waiting",
+        "Waiting"
+      ],
+      [
+        "on_hold",
+        "On Hold"
+      ],
+      [
+        "allocated",
+        "Allocated"
+      ],
+      [
+        "done",
+        "Done"
+      ],
+      [
+        "declined",
+        "Declined"
+      ]
+    ],
+    "string": "State",
+    "type": "selection"
+  },
+  "write_date": {
+    "string": "Last Updated on",
+    "type": "datetime"
+  },
+  "write_uid": {
+    "relation": "res.users",
+    "string": "Last Updated by",
+    "type": "many2one"
+  }
+}

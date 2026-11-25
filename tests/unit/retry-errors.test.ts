@@ -12,7 +12,7 @@ import {
   OdooValidationError,
   OdooAccessError,
 } from "../../src/errors/odoo.errors.js";
-import { isReadMethod, withRetry } from "../../src/utils/retry.js";
+import { isReadMethod, safeFetch, withRetry } from "../../src/utils/retry.js";
 
 /** Error `data` as Odoo 14–19 send it: the class in `name`, no `exception_type`. */
 function odooData(name: string, message: string) {
@@ -221,5 +221,28 @@ describe("createOdooFaultError", () => {
     );
     expect(err.exceptionType).toBe("AttributeError");
     expect(err.debug).toBe(traceback);
+  });
+});
+
+describe("safeFetch", () => {
+  it("hides URL credentials in its error message", async () => {
+    const original = globalThis.fetch;
+    globalThis.fetch = vi
+      .fn()
+      .mockRejectedValue(
+        new TypeError(
+          "Request cannot be constructed from a URL that includes credentials: http://u:s3cret@o/web",
+        ),
+      );
+    try {
+      const error = await safeFetch("http://u:s3cret@o/web", {}, 1000).catch(
+        (e: unknown) => e as Error,
+      );
+      expect(error).toBeInstanceOf(OdooNetworkError);
+      expect((error as Error).message).not.toContain("s3cret");
+      expect((error as Error).message).toContain("http://***@o/web");
+    } finally {
+      globalThis.fetch = original;
+    }
   });
 });

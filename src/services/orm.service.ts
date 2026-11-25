@@ -37,7 +37,7 @@ export class OrmService {
    * Search and return full records in one RPC call.
    * Equivalent to model.search_read() on the server.
    */
-  async searchRead<T extends OdooRecord = OdooRecord>(
+  async searchRead<T extends object = OdooRecord>(
     model: string,
     domain: OdooDomain = [],
     options: SearchReadOptions = {},
@@ -79,7 +79,7 @@ export class OrmService {
   /**
    * Read specific records by ids.
    */
-  async read<T extends OdooRecord = OdooRecord>(
+  async read<T extends object = OdooRecord>(
     model: string,
     ids: number[],
     options: ReadOptions = {},
@@ -155,7 +155,7 @@ export class OrmService {
   /**
    * Read a single record by id. Throws OdooNotFoundError if missing.
    */
-  async readOne<T extends OdooRecord = OdooRecord>(
+  async readOne<T extends object = OdooRecord>(
     model: string,
     id: number,
     options: ReadOptions = {},
@@ -247,12 +247,12 @@ export class OrmService {
     attributes?: string[],
     context?: OdooContext,
   ): Promise<OdooFieldsGet> {
-    return this.callKw<OdooFieldsGet>(
-      model,
-      "fields_get",
-      attributes ? [attributes] : [[]],
-      { context: this.mergeContext(context) },
-    );
+    // fields_get(allfields=None, attributes=None): the attributes go by
+    // keyword; a positional list would be read as the field names to return.
+    return this.callKw<OdooFieldsGet>(model, "fields_get", [], {
+      ...(attributes ? { attributes } : {}),
+      context: this.mergeContext(context),
+    });
   }
 
   /**
@@ -283,7 +283,7 @@ export class OrmService {
    *   await processPartners(page);
    * }
    */
-  async *paginate<T extends OdooRecord = OdooRecord>(
+  async *paginate<T extends object = OdooRecord>(
     model: string,
     domain: OdooDomain = [],
     options: SearchReadOptions & { pageSize?: number } = {},
