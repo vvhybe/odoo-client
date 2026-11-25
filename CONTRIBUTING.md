@@ -42,7 +42,7 @@ If you have an idea for a new feature or improvement:
 
 ## Releasing
 
-Releases are published to npm by `.github/workflows/publish.yml` when a `vX.Y.Z` tag is pushed. The workflow uses npm **trusted publishing**: GitHub proves its identity to npm, so there is no npm token to store or renew.
+Releases are published to npm, then to GitHub Packages, by `.github/workflows/publish.yml` when a `vX.Y.Z` tag is pushed. The workflow uses npm **trusted publishing**: GitHub proves its identity to npm, so there is no npm token to store or renew.
 
 1. Set the version: `npm version X.Y.Z --no-git-tag-version`, then commit `package.json` and `package-lock.json` as `chore(release): X.Y.Z` and push to `main`.
 2. Tag and push: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`. The tag must match `package.json`, or the workflow stops.
@@ -61,6 +61,7 @@ With npm 11.15.0 or later you can do the same from the command line: `npm trust 
 
 After the first trusted release succeeds:
 
+- on GitHub, make the package public: **Packages** → `odoo-client` → **Package settings** → **Change visibility**. GitHub creates packages as private;
 - delete the repository secret `NPM_TOKEN` and revoke that token on npmjs.com;
 - in the package's **Settings** → **Publishing access**, choose **Require two-factor authentication and disallow tokens**. Trusted publishing keeps working.
 
