@@ -94,17 +94,17 @@ jobs:
       - name: Use npm 11.5.1 or later
         run: npm install -g npm@^11.5.1 && npm --version
 
-      - run: npm ci
-
       - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
 
+      # Publish the build job's dist as is: lint, tests and build already ran
+      # in the test and build jobs, so prepublishOnly is skipped here.
       # Provenance is attached automatically with trusted publishing.
       - name: Publish to NPM
-        run: npm publish --access public
+        run: npm publish --access public --ignore-scripts
 
   # The same version on GitHub Packages. Job-level permissions replace the
   # workflow's, so there is no id-token here and npm does not try OIDC; the
@@ -125,10 +125,15 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: "@vvhybe"
 
-      - run: npm ci
+      # The same dist that went to npm, so both registries get the same bytes.
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
 
       - name: Publish to GitHub Packages
-        run: npm publish
+        run: npm publish --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
