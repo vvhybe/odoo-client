@@ -38,6 +38,12 @@ describe("modelInterfaceName", () => {
     ["pos.restock.request.line", "PosRestockRequestLine"],
     ["res.partner", "ResPartner"],
     ["x_studio.my_model", "XStudioMyModel"],
+    [
+      "x.m; } export const evil = 1; interface Z {",
+      "XMExportConstEvil1InterfaceZ",
+    ],
+    ["1abc.x", "Model1abcX"],
+    ["...", "Model"],
   ])("names %s %s", (model, name) => {
     expect(modelInterfaceName(model)).toBe(name);
   });
@@ -138,6 +144,19 @@ describe("generateModelTypes", () => {
     expect(source).toContain("  m: number | false;");
     expect(source).toContain("  p: unknown;");
     expect(source).toContain("  z: unknown;");
+  });
+
+  it("quotes a field name that is not a plain identifier", () => {
+    const name = "a: string; } export const evil = 1; interface Z { b";
+    const source = generateModelTypes("x.m", {
+      [name]: { type: "char", string: "X" },
+      "with-dash": { type: "integer", string: "Y" },
+    });
+    expect(source).toContain(`  ${JSON.stringify(name)}: string | false;`);
+    expect(source).toContain('  "with-dash": number;');
+    expect(
+      source.split("\n").filter((line) => line.startsWith("export ")),
+    ).toHaveLength(1);
   });
 
   it("keeps a label containing */ inside its comment", () => {
