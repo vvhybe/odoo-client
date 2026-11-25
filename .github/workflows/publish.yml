@@ -94,22 +94,54 @@ jobs:
       - name: Use npm 11.5.1 or later
         run: npm install -g npm@^11.5.1 && npm --version
 
-      - run: npm ci
-
       - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
 
+      # Publish the build job's dist as is: lint, tests and build already ran
+      # in the test and build jobs, so prepublishOnly is skipped here.
       # Provenance is attached automatically with trusted publishing.
       - name: Publish to NPM
-        run: npm publish --access public
+        run: npm publish --access public --ignore-scripts
+
+  # The same version on GitHub Packages. Job-level permissions replace the
+  # workflow's, so there is no id-token here and npm does not try OIDC; the
+  # workflow's own GITHUB_TOKEN publishes, no personal token needed.
+  publish-github:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    needs: publish-npm
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          registry-url: https://npm.pkg.github.com
+          scope: "@vvhybe"
+
+      # The same dist that went to npm, so both registries get the same bytes.
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to GitHub Packages
+        run: npm publish --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: publish-npm
+    # verify provides the version for the install line in the release body.
+    needs: [verify, publish-npm]
     steps:
       - uses: actions/checkout@v4
         with:

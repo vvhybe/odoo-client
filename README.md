@@ -78,6 +78,15 @@ pnpm add @vvhybe/odoo-client
 yarn add @vvhybe/odoo-client
 ```
 
+**From GitHub Packages.** Each release is also published to GitHub Packages. npmjs.com needs no setup; GitHub Packages needs an `.npmrc` next to your `package.json` and a personal access token (classic) with the `read:packages` scope:
+
+```ini
+@vvhybe:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+Then `npm install @vvhybe/odoo-client` as above, with `GITHUB_TOKEN` set in your environment.
+
 <h2>
   <img src=".github/assets/logo.svg" alt="logo" width="24" style="vertical-align: middle;"/>
   <span style="vertical-align: middle;">Quick start</span>
