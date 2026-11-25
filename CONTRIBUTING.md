@@ -40,6 +40,30 @@ If you have an idea for a new feature or improvement:
 - We use **Prettier** for formatting.
 - Please ensure all imports are ordered correctly and unused imports are removed.
 
+## Releasing
+
+Releases are published to npm by `.github/workflows/publish.yml` when a `vX.Y.Z` tag is pushed. The workflow uses npm **trusted publishing**: GitHub proves its identity to npm, so there is no npm token to store or renew.
+
+1. Set the version: `npm version X.Y.Z --no-git-tag-version`, then commit `package.json` and `package-lock.json` as `chore(release): X.Y.Z` and push to `main`.
+2. Tag and push: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`. The tag must match `package.json`, or the workflow stops.
+3. Approve the `npm-publish` environment on the workflow run. The job then publishes to npm with provenance and creates the GitHub release.
+
+**Trusted publisher on npmjs.com.** It must exist before the first release that uses it, and a new one expires unless it publishes **within 2 days**, so create it on the day you tag. On npmjs.com, open `@vvhybe/odoo-client` → **Settings** → **Trusted publishing** → **GitHub Actions** and enter, exactly (fields are case-sensitive):
+
+| Field | Value |
+| --- | --- |
+| Organization or user | `vvhybe` |
+| Repository | `odoo-client` |
+| Workflow filename | `publish.yml` |
+| Environment name | `npm-publish` |
+
+With npm 11.15.0 or later you can do the same from the command line: `npm trust github @vvhybe/odoo-client --file publish.yml --repo vvhybe/odoo-client --env npm-publish --allow-publish`.
+
+After the first trusted release succeeds:
+
+- delete the repository secret `NPM_TOKEN` and revoke that token on npmjs.com;
+- in the package's **Settings** → **Publishing access**, choose **Require two-factor authentication and disallow tokens**. Trusted publishing keeps working.
+
 ## Legal
 
 By contributing to Odoo Client, you agree that your contributions will be licensed under its [MIT License](LICENSE).
