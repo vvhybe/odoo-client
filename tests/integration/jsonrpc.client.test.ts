@@ -11,6 +11,7 @@ import {
   OdooAuthenticationError,
   OdooRpcError,
   OdooNetworkError,
+  OdooValidationError,
 } from "../../src/errors/odoo.errors.js";
 
 // ─── Fetch mock helpers ───────────────────────────────────────────────────────
@@ -66,14 +67,13 @@ describe("JsonRpcClient", () => {
         jsonrpc: "2.0",
         id: 1,
         error: {
-          code: 100,
-          message: "Access denied",
+          code: 200,
+          message: "Odoo Server Error",
           data: {
-            exception_type: "odoo.exceptions.AccessDenied",
-            message: "Wrong login/password",
+            message: "Access Denied",
             name: "odoo.exceptions.AccessDenied",
             debug: "",
-            arguments: [],
+            arguments: ["Access Denied"],
           },
         },
       });
@@ -90,13 +90,12 @@ describe("JsonRpcClient", () => {
         id: 1,
         error: {
           code: 200,
-          message: "Server error",
+          message: "Odoo Server Error",
           data: {
-            exception_type: "werkzeug.exceptions.InternalServerError",
             message: "Boom",
-            name: "InternalServerError",
+            name: "builtins.ValueError",
             debug: "Traceback...",
-            arguments: [],
+            arguments: ["Boom"],
           },
         },
       });
@@ -132,9 +131,44 @@ describe("JsonRpcClient", () => {
       });
 
       const client = makeClient();
-      const result = await client.call("/web/dataset/call_kw", {});
+      const result = await client.call(
+        "/web/dataset/call_kw",
+        {},
+        { retry: true },
+      );
       expect(result).toBe("done");
       expect(calls).toBe(3);
+    });
+
+    it("does not retry by default", async () => {
+      globalThis.fetch = mockFetchFailure(new TypeError("fetch failed"));
+      const client = makeClient();
+      await expect(
+        client.call("/web/dataset/call_kw", {}),
+      ).rejects.toBeInstanceOf(OdooNetworkError);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("throws an Odoo UserError at once as OdooValidationError", async () => {
+      globalThis.fetch = mockFetch({
+        jsonrpc: "2.0",
+        id: 1,
+        error: {
+          code: 200,
+          message: "Odoo Server Error",
+          data: {
+            message: "Refused",
+            name: "odoo.exceptions.UserError",
+            debug: "",
+            arguments: ["Refused"],
+          },
+        },
+      });
+      const client = makeClient();
+      await expect(
+        client.call("/web/dataset/call_kw", {}, { retry: true }),
+      ).rejects.toBeInstanceOf(OdooValidationError);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     });
 
     it("throws after exhausting all retries", async () => {
@@ -147,6 +181,27 @@ describe("JsonRpcClient", () => {
   });
 
   describe("callKw", () => {
+    it("retries a read method after a network failure", async () => {
+      globalThis.fetch = mockFetchFailure(new TypeError("fetch failed"));
+      const client = makeClient();
+      await expect(
+        client.callKw("res.partner", "search_read", [[]]),
+      ).rejects.toBeInstanceOf(OdooNetworkError);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(3); // 1 + 2 retries
+    });
+
+    it.each(["create", "write", "unlink", "action_confirm"])(
+      "sends %s only once after a network failure",
+      async (method) => {
+        globalThis.fetch = mockFetchFailure(new TypeError("fetch failed"));
+        const client = makeClient();
+        await expect(
+          client.callKw("res.partner", method, [[]]),
+        ).rejects.toBeInstanceOf(OdooNetworkError);
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      },
+    );
+
     it("sends correct JSON-RPC body structure", async () => {
       let capturedBody: unknown;
       globalThis.fetch = vi.fn().mockImplementation((_url, opts) => {

@@ -7,6 +7,8 @@
  * provided by the runtime, or falls back to string building for server-side.
  */
 
+import { createOdooFaultError } from "../errors/odoo.errors.js";
+
 export type XmlRpcValue =
   | string
   | number
@@ -69,9 +71,7 @@ export async function deserialiseXmlRpc(xml: string): Promise<XmlRpcValue> {
   if (fault) {
     const faultValue = parseValue(fault.querySelector("value")!);
     const f = faultValue as { faultCode?: number; faultString?: string };
-    throw Object.assign(new Error(f.faultString ?? "XML-RPC fault"), {
-      code: f.faultCode ?? -1,
-    });
+    throw createOdooFaultError(f.faultCode ?? -1, f.faultString ?? "");
   }
 
   const firstParam = doc.querySelector("params > param > value");

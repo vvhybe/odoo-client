@@ -30,11 +30,13 @@ export interface JsonRpcError {
 }
 
 export interface JsonRpcErrorData {
+  /** The exception class, e.g. "odoo.exceptions.UserError" (Odoo 14+). */
   name: string;
   debug: string;
   message: string;
   arguments: unknown[];
-  exception_type: string;
+  /** Not sent by Odoo 14+; kept for older servers. Use `name` instead. */
+  exception_type?: string;
   context?: Record<string, unknown>;
 }
 

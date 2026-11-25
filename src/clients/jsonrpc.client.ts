@@ -1,5 +1,10 @@
 import { createOdooError, OdooNetworkError } from "../errors/odoo.errors.js";
-import { safeFetch, withRetry, type RetryOptions } from "../utils/retry.js";
+import {
+  isReadMethod,
+  safeFetch,
+  withRetry,
+  type RetryOptions,
+} from "../utils/retry.js";
 
 import type {
   JsonRpcRequest,
@@ -31,7 +36,16 @@ export class JsonRpcClient {
 
   // ─── Core call ────────────────────────────────────────────────────────────
 
-  async call<T = unknown>(path: string, params: JsonRpcParams): Promise<T> {
+  /**
+   * Posts a JSON-RPC call to `path`.
+   * @param options.retry retry on network failures and timeouts. Off by
+   *   default: only pass `true` for calls that do not change data.
+   */
+  async call<T = unknown>(
+    path: string,
+    params: JsonRpcParams,
+    options: { retry?: boolean } = {},
+  ): Promise<T> {
     const body: JsonRpcRequest = {
       jsonrpc: "2.0",
       method: "call",
@@ -41,6 +55,7 @@ export class JsonRpcClient {
 
     const url = `${this.baseUrl}${path}`;
 
+    const retryOptions = this.retryOptionsFor(options.retry ?? false);
     return withRetry(async () => {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -88,14 +103,18 @@ export class JsonRpcClient {
       }
 
       return json.result as T;
-    }, this.retryOptions);
+    }, retryOptions);
+  }
+
+  private retryOptionsFor(retry: boolean): RetryOptions {
+    return retry ? this.retryOptions : { ...this.retryOptions, retries: 0 };
   }
 
   // ─── Convenience wrappers ─────────────────────────────────────────────────
 
   /** /web/session/authenticate */
   async sessionAuthenticate<T>(params: JsonRpcParams): Promise<T> {
-    return this.call<T>("/web/session/authenticate", params);
+    return this.call<T>("/web/session/authenticate", params, { retry: true });
   }
 
   /**
@@ -114,12 +133,11 @@ export class JsonRpcClient {
         ? `/web/dataset/call_kw/${model}/${method}`
         : "/web/dataset/call_kw";
 
-    return this.call<T>(path, {
-      model,
-      method,
-      args,
-      kwargs,
-    });
+    return this.call<T>(
+      path,
+      { model, method, args, kwargs },
+      { retry: isReadMethod(method) },
+    );
   }
 
   /**
@@ -127,10 +145,10 @@ export class JsonRpcClient {
    * On Odoo 17+ this endpoint no longer exists; use callKw('search_read') instead.
    */
   async searchRead<T>(params: JsonRpcParams): Promise<T> {
-    return this.call<T>("/web/dataset/search_read", params);
+    return this.call<T>("/web/dataset/search_read", params, { retry: true });
   }
 
-  /** Generic path — for advanced / custom controller calls */
+  /** Generic path — for advanced / custom controller calls. Not retried. */
   async callPath<T>(path: string, params: JsonRpcParams): Promise<T> {
     return this.call<T>(path, params);
   }

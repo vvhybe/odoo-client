@@ -25,9 +25,9 @@ export class OdooRpcError extends OdooError {
     this.name = "OdooRpcError";
   }
 
-  /** Odoo server-side exception type, e.g. "odoo.exceptions.AccessDenied" */
+  /** Odoo server-side exception class, e.g. "odoo.exceptions.AccessDenied" */
   get exceptionType(): string | undefined {
-    return this.data?.exception_type;
+    return this.data?.name || this.data?.exception_type;
   }
 
   /** Server-side debug traceback */
@@ -64,7 +64,8 @@ export class OdooAuthenticationError extends OdooError {
   }
 }
 
-export class OdooSessionExpiredError extends OdooError {
+/** The session cookie is no longer valid: authenticate again. */
+export class OdooSessionExpiredError extends OdooAuthenticationError {
   constructor() {
     super("Session expired — re-authenticate");
     this.name = "OdooSessionExpiredError";
@@ -110,45 +111,89 @@ export class OdooConfigError extends OdooError {
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
+/** JSON-RPC error code Odoo uses for an expired or invalid session. */
+const SESSION_EXPIRED_CODE = 100;
+
 /**
  * Maps a raw JSON-RPC error to the most specific typed OdooError subclass.
+ *
+ * Odoo 14+ identifies the exception by its class in `data.name`
+ * (e.g. "odoo.exceptions.UserError"); `exception_type` is only read as a
+ * fallback, since no supported Odoo version sends it.
  */
 export function createOdooError(
   rpcCode: number,
   message: string,
   data?: JsonRpcErrorData,
 ): OdooError {
-  const exceptionType = data?.exception_type ?? "";
-  const serverMessage = data?.message ?? message;
+  const kind = `${data?.name ?? ""} ${data?.exception_type ?? ""}`;
+  const serverMessage = data?.message || message;
 
-  if (
-    exceptionType.includes("AccessDenied") ||
-    exceptionType.includes("access_denied") ||
-    rpcCode === 100
-  ) {
+  if (/AccessDenied|access_denied/.test(kind)) {
     return new OdooAuthenticationError(serverMessage);
   }
 
-  if (
-    exceptionType.includes("AccessError") ||
-    exceptionType.includes("access_error")
-  ) {
+  if (rpcCode === SESSION_EXPIRED_CODE || /SessionExpired/.test(kind)) {
+    return new OdooSessionExpiredError();
+  }
+
+  if (/AccessError|access_error/.test(kind)) {
     return new OdooAccessError(serverMessage);
   }
 
-  if (
-    exceptionType.includes("ValidationError") ||
-    exceptionType.includes("UserError")
-  ) {
-    return new OdooValidationError(serverMessage);
-  }
-
-  if (exceptionType.includes("MissingError")) {
+  if (/MissingError|missing_error/.test(kind)) {
     return new OdooNotFoundError(
       (data?.context?.["model"] as string) ?? "unknown",
       [],
     );
   }
 
+  if (
+    /UserError|ValidationError|RedirectWarning|user_error|validation_error/.test(
+      kind,
+    )
+  ) {
+    return new OdooValidationError(serverMessage);
+  }
+
   return new OdooRpcError(serverMessage, rpcCode, data);
+}
+
+/** XML-RPC fault codes of Odoo's `/xmlrpc/2/*` endpoints. */
+const FAULT_USER_ERROR = 2;
+const FAULT_ACCESS_DENIED = 3;
+const FAULT_ACCESS_ERROR = 4;
+
+/**
+ * Maps an XML-RPC fault to the most specific typed OdooError subclass.
+ *
+ * Odoo answers `UserError` (and its `ValidationError` / `RedirectWarning`
+ * subclasses) with fault code 2, `AccessDenied` with 3, `AccessError` with 4,
+ * and anything else with 1 and the traceback as the fault string.
+ */
+export function createOdooFaultError(
+  faultCode: number | string,
+  faultString: string,
+): OdooError {
+  switch (faultCode) {
+    case FAULT_ACCESS_DENIED:
+      return new OdooAuthenticationError(faultString);
+    case FAULT_ACCESS_ERROR:
+      return new OdooAccessError(faultString);
+    case FAULT_USER_ERROR:
+      return new OdooValidationError(faultString);
+  }
+  // The traceback's last line reads "<ExceptionClass>: <message>".
+  const lastLine = faultString.trim().split("\n").pop()?.trim() ?? "";
+  const exceptionClass = /^([\w.]+):/.exec(lastLine)?.[1] ?? "";
+  return new OdooRpcError(
+    lastLine || "XML-RPC fault",
+    typeof faultCode === "number" ? faultCode : -1,
+    {
+      name: exceptionClass,
+      debug: faultString,
+      message: lastLine,
+      arguments: [],
+    },
+  );
 }
