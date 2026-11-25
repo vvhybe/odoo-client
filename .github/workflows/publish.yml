@@ -135,7 +135,8 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: publish-npm
+    # verify provides the version for the install line in the release body.
+    needs: [verify, publish-npm]
     steps:
       - uses: actions/checkout@v4
         with:
