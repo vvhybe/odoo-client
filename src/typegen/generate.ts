@@ -31,12 +31,13 @@ export function generateModelTypes(
 ): string {
   const names = Object.keys(fields).sort((a, b) => a.localeCompare(b, "en"));
   const properties = names.map((name) => {
-    const field = fields[name]!;
+    // A server that does not follow Odoo's shape may send null here.
+    const field = fields[name] as OdooFieldDef | null | undefined;
     const type = name === "id" ? "number" : fieldType(field);
     // Field names come from the server: quote any that is not a plain
     // identifier, so it can never close the interface or add code.
     const key = IDENTIFIER.test(name) ? name : JSON.stringify(name);
-    return `  /** ${fieldComment(field)} */\n  ${key}: ${type};`;
+    return `  /** ${fieldComment(field, name)} */\n  ${key}: ${type};`;
   });
   return [
     `export interface ${modelInterfaceName(model)} {`,
@@ -49,15 +50,34 @@ export function generateModelTypes(
 export function generateTypesFile(
   models: { model: string; fields: OdooFieldsGet }[],
 ): string {
+  const clash = interfaceNameClash(models.map(({ model }) => model));
+  if (clash) throw new Error(clash);
   const blocks = models.map(({ model, fields }) =>
     generateModelTypes(model, fields),
   );
   return `${TYPEGEN_HEADER}\n\n${blocks.join("\n\n")}\n`;
 }
 
+/**
+ * A message naming two models that would get the same interface name
+ * (`res.partner` and `res_partner` both give `ResPartner`), or undefined.
+ */
+export function interfaceNameClash(models: string[]): string | undefined {
+  const owners = new Map<string, string>();
+  for (const model of models) {
+    const name = modelInterfaceName(model);
+    const owner = owners.get(name);
+    if (owner !== undefined && owner !== model) {
+      return `${owner} and ${model} both become interface ${name}; generate them separately.`;
+    }
+    owners.set(name, model);
+  }
+  return undefined;
+}
+
 /** The value `search_read` returns for a field of this type. */
-function fieldType(field: OdooFieldDef): string {
-  switch (field.type) {
+function fieldType(field: OdooFieldDef | null | undefined): string {
+  switch (field?.type) {
     case "char":
     case "text":
     case "html":
@@ -73,7 +93,7 @@ function fieldType(field: OdooFieldDef): string {
     case "boolean":
       return "boolean";
     case "selection":
-      return selectionType(field.selection);
+      return selectionType(field!.selection);
     case "many2one":
       return "[number, string] | false";
     case "one2many":
@@ -87,17 +107,30 @@ function fieldType(field: OdooFieldDef): string {
   }
 }
 
-function selectionType(selection: OdooFieldDef["selection"]): string {
-  if (!selection?.length) return "string | false";
-  const literals = selection.map(([key]) => JSON.stringify(key));
-  return `${literals.join(" | ")} | false`;
+function selectionType(selection: unknown): string {
+  // Odoo sends [key, label] pairs with text (sometimes number) keys; anything
+  // else is skipped rather than written as an invalid type.
+  const keys = (Array.isArray(selection) ? selection : [])
+    .map((entry: unknown) => (Array.isArray(entry) ? entry[0] : undefined))
+    .filter(
+      (key): key is string | number =>
+        typeof key === "string" || typeof key === "number",
+    );
+  if (!keys.length) return "string | false";
+  return `${keys.map((key) => JSON.stringify(key)).join(" | ")} | false`;
 }
 
 /** Label, relation and date format, safe inside a block comment. */
-function fieldComment(field: OdooFieldDef): string {
-  let comment = field.string;
-  if (field.relation) comment += ` (${field.relation})`;
-  if (field.type === "date") comment += " — YYYY-MM-DD";
-  if (field.type === "datetime") comment += " — YYYY-MM-DD HH:MM:SS, UTC";
+function fieldComment(
+  field: OdooFieldDef | null | undefined,
+  name: string,
+): string {
+  let comment =
+    typeof field?.string === "string" && field.string ? field.string : name;
+  if (typeof field?.relation === "string" && field.relation) {
+    comment += ` (${field.relation})`;
+  }
+  if (field?.type === "date") comment += " — YYYY-MM-DD";
+  if (field?.type === "datetime") comment += " — YYYY-MM-DD HH:MM:SS, UTC";
   return comment.replace(/\*\//g, "*\\/");
 }

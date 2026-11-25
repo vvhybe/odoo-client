@@ -284,7 +284,7 @@ ODOO_URL=https://mycompany.odoo.com ODOO_DB=mydb ODOO_USERNAME=admin@example.com
 - Without `--out`, the file is printed. `--out` creates missing folders.
 - Each model becomes one interface named in PascalCase (`sale.order` → `SaleOrder`), typed the way `searchRead` returns values: many2one `[number, string] | false`, x2many `number[]`, selection a union of its keys, text and date fields `string | false`. Each field keeps its label as a doc comment.
 - The output has no timestamp or server details, so regenerating gives clean diffs.
-- Exit codes: `0` success, `1` usage or environment error, `2` Odoo error.
+- Exit codes: `0` success, `1` usage, environment or file-writing error, `2` Odoo error. An `ODOO_URL` with a user name or password is refused, so it never appears in an error message. Two models that would get the same interface name (`res.partner` and `res_partner`) are refused too.
 
 Every field is declared. For a `searchRead` that asks for some fields only, pick them:
 

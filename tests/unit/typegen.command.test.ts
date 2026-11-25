@@ -218,6 +218,73 @@ describe("runTypegen", () => {
     expect(fake.err.join("")).toBe("OdooAuthenticationError: Access Denied\n");
   });
 
+  it("refuses models that would share an interface name", async () => {
+    const code = await runTypegen(
+      ["typegen", "res.partner", "res_partner"],
+      ENV,
+      fake.deps,
+    );
+    expect(code).toBe(1);
+    expect(fake.err.join("")).toContain(
+      "res.partner and res_partner both become interface ResPartner",
+    );
+    expect(fake.connect).not.toHaveBeenCalled();
+  });
+
+  it("treats an empty ODOO_VERSION as unset", async () => {
+    const code = await runTypegen(
+      ["typegen", "res.partner"],
+      { ...ENV, ODOO_VERSION: "" },
+      fake.deps,
+    );
+    expect(code).toBe(0);
+    expect(fake.connect.mock.calls[0]![0]).not.toHaveProperty("version");
+  });
+
+  it("refuses an empty --out", async () => {
+    const code = await runTypegen(
+      ["typegen", "res.partner", "--out", ""],
+      ENV,
+      fake.deps,
+    );
+    expect(code).toBe(1);
+    expect(fake.err.join("")).toContain("--out needs a file path");
+    expect(fake.connect).not.toHaveBeenCalled();
+  });
+
+  it("refuses an ODOO_URL with credentials, without printing them", async () => {
+    const code = await runTypegen(
+      ["typegen", "res.partner"],
+      { ...ENV, ODOO_URL: "http://u:s3cret@o" },
+      fake.deps,
+    );
+    expect(code).toBe(1);
+    const message = fake.err.join("");
+    expect(message).toContain(
+      "ODOO_URL must not contain a user name or password",
+    );
+    expect(message).not.toContain("s3cret");
+    expect(fake.connect).not.toHaveBeenCalled();
+  });
+
+  it("exits 1 when the --out file cannot be written", async () => {
+    const deps = {
+      ...fake.deps,
+      writeFile: vi.fn(async () => {
+        throw new Error("EACCES: permission denied");
+      }),
+    };
+    const code = await runTypegen(
+      ["typegen", "res.partner", "--out", "t.ts"],
+      ENV,
+      deps,
+    );
+    expect(code).toBe(1);
+    expect(fake.err.join("")).toBe(
+      "Cannot write t.ts: EACCES: permission denied\n",
+    );
+  });
+
   it("creates the --out directory when it does not exist", async () => {
     const dir = await mkdtemp(join(tmpdir(), "typegen-"));
     try {

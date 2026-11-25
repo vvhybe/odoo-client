@@ -110,10 +110,15 @@ export async function safeFetch(
     if (error instanceof OdooTimeoutError) throw error;
     const cause = error instanceof Error ? error : undefined;
     throw new OdooNetworkError(
-      `Network request failed: ${cause?.message ?? String(error)}`,
+      `Network request failed: ${hideUrlCredentials(cause?.message ?? String(error))}`,
       cause,
     );
   }
+}
+
+/** Replaces `user:password@` in any URL of `text` with `***@`. */
+function hideUrlCredentials(text: string): string {
+  return text.replace(/(\b[a-z][a-z0-9+.-]*:\/\/)[^\s/@]+@/gi, "$1***@");
 }
 
 function sleep(ms: number): Promise<void> {

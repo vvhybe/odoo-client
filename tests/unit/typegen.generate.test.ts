@@ -10,7 +10,11 @@ import {
   TYPEGEN_HEADER,
 } from "../../src/index.js";
 
-import type { OdooFieldsGet, OdooFieldType } from "../../src/index.js";
+import type {
+  OdooFieldDef,
+  OdooFieldsGet,
+  OdooFieldType,
+} from "../../src/index.js";
 
 /** `fields_get` answers captured from Odoo 18. */
 function fixture(model: string): OdooFieldsGet {
@@ -167,6 +171,36 @@ describe("generateModelTypes", () => {
   });
 });
 
+describe("malformed fields_get answers", () => {
+  const source = generateModelTypes("x.m", {
+    a: { type: "char" } as unknown as OdooFieldDef,
+    b: null as unknown as OdooFieldDef,
+    c: {
+      type: "selection",
+      string: "C",
+      selection: [3, ["k"], [], [undefined, "U"], ["ok", "OK"]],
+    } as unknown as OdooFieldDef,
+    d: {
+      type: "many2one",
+      string: 5,
+      relation: { x: 1 },
+    } as unknown as OdooFieldDef,
+  });
+
+  it("labels a field with its name when the label is missing or not text", () => {
+    expect(source).toContain("  /** a */\n  a: string | false;");
+    expect(source).toContain("  /** d */\n  d: [number, string] | false;");
+  });
+
+  it("types a missing field definition as unknown", () => {
+    expect(source).toContain("  /** b */\n  b: unknown;");
+  });
+
+  it("keeps only selection entries with a text or number key", () => {
+    expect(source).toContain('  c: "k" | "ok" | false;');
+  });
+});
+
 describe("generateTypesFile", () => {
   const models = [
     { model: "res.partner", fields: partnerFields },
@@ -190,6 +224,15 @@ describe("generateTypesFile", () => {
 
   it("is deterministic", () => {
     expect(generateTypesFile(models)).toBe(file);
+  });
+
+  it("refuses two models that would share an interface name", () => {
+    expect(() =>
+      generateTypesFile([
+        { model: "res.partner", fields: {} },
+        { model: "res_partner", fields: {} },
+      ]),
+    ).toThrow("res.partner and res_partner both become interface ResPartner");
   });
 
   it("uses the exact header line", () => {

@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import { parseArgs } from "node:util";
 
 import { OdooConnect } from "../index.js";
-import { generateTypesFile } from "./generate.js";
+import { generateTypesFile, interfaceNameClash } from "./generate.js";
 
 import type { OdooConfig, OdooFieldsGet, OdooVersion } from "../index.js";
 
@@ -76,6 +76,15 @@ export async function runTypegen(
     io.stderr(USAGE);
     return 1;
   }
+  if (parsed.values.out === "") {
+    io.stderr(`--out needs a file path.\n\n${USAGE}`);
+    return 1;
+  }
+  const clash = interfaceNameClash(models);
+  if (clash) {
+    io.stderr(`${clash}\n`);
+    return 1;
+  }
 
   const config = configFromEnv(env);
   if (typeof config === "string") {
@@ -106,7 +115,7 @@ export async function runTypegen(
 
   const content = generateTypesFile(fetched);
   const out = parsed.values.out;
-  if (!out) {
+  if (out === undefined) {
     io.stdout(content);
     return 0;
   }
@@ -135,6 +144,16 @@ function configFromEnv(
   if (missing.length) {
     return `Missing environment variables: ${missing.join(", ")}`;
   }
+  // fetch refuses such URLs, and its error would print the password.
+  let url: URL;
+  try {
+    url = new URL(ODOO_URL!);
+  } catch {
+    return "ODOO_URL is not a valid URL.";
+  }
+  if (url.username || url.password) {
+    return "ODOO_URL must not contain a user name or password.";
+  }
 
   const config: OdooConfig = {
     url: ODOO_URL!,
@@ -150,7 +169,8 @@ function configFromEnv(
     config.protocol = "jsonrpc";
   }
 
-  if (env.ODOO_VERSION !== undefined) {
+  // An empty value (common for unset CI variables) means "not set".
+  if (env.ODOO_VERSION) {
     const version = Number(env.ODOO_VERSION);
     if (!/^\d+$/.test(env.ODOO_VERSION) || version < 14 || version > 19) {
       return "ODOO_VERSION must be a whole number from 14 to 19.";
